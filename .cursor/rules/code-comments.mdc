@@ -1,0 +1,14 @@
+---
+description: 本仓库代码注释规范（Python）
+alwaysApply: true
+---
+
+# 代码注释
+
+编写或修改本仓库代码时，遵循 `documents/规范/code-comments-standard.md`。
+
+要点：
+- 解释 **为什么**、边界与业务约束，避免复述代码
+- **模块 docstring** + **公开类/函数 docstring**（中文为主）
+- 注释与代码同步；禁止在注释中写真实密钥
+- 不要为假想复用过度封装

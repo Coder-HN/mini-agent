@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "min-agent"
+version = "0.1.0"
+description = "Minimal FC agent runtime (Loop / Store / tools)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "openai>=1.40",
+  "pydantic>=2.7",
+  "pydantic-settings>=2.3",
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "pyyaml>=6.0",
+  "psycopg[binary]>=3.2",
+  "python-dotenv>=1.0",
+]
+
+[project.scripts]
+min-agent = "min_agent.cli:main"
+min-agent-server = "min_agent.main:main"
+
+[tool.setuptools.package-dir]
+agent_core = "packages/agent_core"
+agent_llm = "packages/agent_llm"
+agent_server = "packages/agent_server"
+min_agent = "apps/min_agent"
+
+[tool.setuptools]
+packages = [
+  "agent_core",
+  "agent_core.tools",
+  "agent_llm",
+  "agent_server",
+  "min_agent",
+  "min_agent.tools",
+]
+[tool.pyright]
+extraPaths = ["packages", "apps"]

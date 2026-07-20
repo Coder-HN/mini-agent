@@ -1,0 +1,15 @@
+---
+description: 项目文档统一放在根目录 documents/ 下
+alwaysApply: false
+---
+
+# 文档目录规范（documents/）
+
+- 本项目**所有文档**（方案、设计、接口说明、排障手册、上线步骤、复盘记录等）统一放在根目录 `documents/` 下。
+- 优先使用中文名
+- 不要把项目自写文档放到 `go/docs/`、`web_app/`、`www/`、或其它子目录里（第三方依赖自带的 README/CHANGELOG 不受此规则影响）。
+
+## 索引入口（建议）
+
+- 新增一份重要文档后，建议在 `documents/Readme.md` 追加链接，作为文档总入口与导航。
+
