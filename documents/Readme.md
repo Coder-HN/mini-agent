@@ -1,5 +1,6 @@
 # 文档入口
 
+- [系统总体规划](./系统总体规划.md)（四仓库整体定位与大层面需求）
 - [代码注释规范](./规范/code-comments-standard.md)（写代码默认遵守）
 - [仿 Opencode / Claude Code 架构设计](./仿Opencode&Claude-code架构设计/)（叙事笔记；冲突以 `openspec/` 为准）
   - `01`–`04`：OpenCode / Claude 解读
