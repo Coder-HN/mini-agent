@@ -12,7 +12,7 @@
 
 #### 场景：按 Agent 解析 schema
 - **当** 循环为 Agent `min_agent` 开始一轮
-- **则** `resolve` 只返回该 Agent 已注册的工具（含 `query`、`talk_assistant` 与占位工具，见 `min-agent-app`）
+- **则** `resolve` 只返回该 Agent 已注册的工具（含 `query` / `write` 与占位工具，见 `min-agent-app`）
 
 #### 场景：执行前校验
 - **当** 模型请求某个工具并附带 JSON 参数

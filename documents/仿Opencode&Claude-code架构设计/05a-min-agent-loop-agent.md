@@ -124,7 +124,7 @@ class AgentDef:
     can_spawn_task: bool = False          # 子 Agent 默认 False
 ```
 
-首个前台 Agent：`min_agent`。CRM 查询/导航只读说明，不自动审批；话术/纪要/PPT 经独立 Workflow 的 tool 委托（见 [05 §3.1](./05-min-agent-architecture.md)）。
+首个前台 Agent：`min_agent`。ChatOps 查询只读说明，不自动改写权限数据（见总体规划与 `min-agent-app` 规格）。
 
 ---
 
@@ -151,9 +151,9 @@ class AgentDef:
 
 P0：只有 Agent 白名单。数据范围不在 Python 发明第二套 ACL。
 
-### 4.4 业务门面（CRM 查询）
+### 4.4 业务门面（ChatOps 查询）
 
-单一 `query(data_type, filters)`，gateway 内按 `data_type` 路由。P0 `commission` 用本地桩。
+单一 `query(data_type, filters)`，gateway 内按 `data_type` 路由。现行：`users` / `login_logs` → go-admin REST（JWT）；`commission` 已下线。
 
 ---
 

@@ -50,8 +50,16 @@
 
 ### 需求：中途状态放在内存 transcript
 
-本轮 tool_call / tool_result 必须进入内存 messages 供后续 Turn 使用。P0 不要求把中途 tool 结果写入 PostgreSQL（见 `design.md` §2、§10）。
+本轮 tool_call / tool_result 必须进入内存 messages 供后续 Turn 使用。续聊用的 PostgreSQL `agent_messages` 仍可不存中途 tool 行；审计轨迹写入独立表 `agent_tool_events`（见 `session-store`），不得替代本需求的内存回灌。
 
 #### 场景：同一次请求内多轮工具
 - **当** 同一 `run_agent` 内连续两次 tool_calls
 - **则** 第二次 LLM 调用的 messages 中已包含第一次的 tool 结果
+
+### 需求：工具执行写入审计轨迹
+
+系统在 Loop 内执行工具时，MUST 测量单次执行耗时，并将工具名、参数、结果摘要、权限拒绝标记与可选的本轮 LLM token usage 交给 Store 持久化。MUST NOT 因轨迹写入失败而让整次聊天崩溃：写入失败应吞掉或记录后继续编排，仍须回灌 tool_result。
+
+#### 场景：工具执行伴随落库调用
+- **当** 模型产出 tool_calls 且 Loop 执行某一工具
+- **则** 在返回 tool 角色消息的同时，尝试写入一条会话轨迹事件

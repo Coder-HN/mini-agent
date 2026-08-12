@@ -1,15 +1,16 @@
 schema: spec-driven
 
 context: |
-  项目：min-agent。前台 FC Agent `min_agent` 做 CRM 问答；话术/纪要/PPT 等固定流水线用独立 Workflow，经 tool/task 挂载（方案 A）。
-  运行时：Store（PostgreSQL 跨请求会话记忆）+ 内存 messages（本轮 transcript）+ Loop（FC while）+ Turn（每轮一次 LLM）。
-  对齐 OpenCode SessionPrompt / Claude queryLoop；主对话编排不用 CrewAI Flow。
-  业务数据只经 Go Gateway；Python 不直连业务 MySQL。
-  P0：apps/min_agent + 门面工具 query；佣金用本地桩（已归档）。
-  验收：「睿德志行佣金审核通过了吗？」→ query → 桩数据驳回 → 中文总结 → PG 有行。
-  延后：流式与边做边提示、权限 ask、截断、compaction、task/固定流水线挂载、长期记忆、Go Chat 权威。
-  叙事架构笔记：本仓库 documents/仿Opencode&Claude-code架构设计/（01–06）。
-  实现规格：本仓库 openspec/（基线 specs/；进行中 changes/）。
+  项目：min-agent。前台 FC Agent `min_agent`，产品定位见 documents/系统总体规划.md（ChatOps + go-admin RBAC）。
+  运行时：Store（PostgreSQL）+ 内存 messages + Loop（FC while）+ Turn。
+  业务数据经 go-admin 控制面 REST；Python 不直连业务库。
+  M1：query 调 GET /api/v1/sys-user 与 /api/v1/sys-login-log，透传 context.access_token。
+  M2：write 工具 create_user / disable_user；confirmed=false 只预览 impact，true 才 POST/PUT。
+  M3：agent_tool_events 落库；GET /sessions/{id}/trail；Web 回放延后。
+  R4：会话 owner_user_id；trail 按 viewer_user_id + data_scope（1=全部，否则仅本人）。
+  本服务 :8001，控制面 :8000。联调主路径 /api/v1/agent/chat。
+  延后：Web 会话回放、流式/权限两道门等。不含已下线的招商话术 / ai_crew。
+  实现规格：openspec/；推进节奏：.cursor/rules/master-plan-rhythm.mdc。
 
 rules:
   proposal:
@@ -19,17 +20,11 @@ rules:
   design:
     - 使用中文编写
     - 优先使用 Store / Loop / Turn 用语
-    - 写明延后的 P1/P2 change（kebab-case 名）
+    - 写明延后的后续 change（kebab-case 名）
     - 区分：PostgreSQL=跨请求会话记忆；内存 messages=本轮 transcript
-    - 架构笔记（05/05a/05b/06）中已确认的决策必须写入本 design（意图、Loop 骨架、方案 A、L0/L1/L2、权限、边做边提示等），供实现与 AI coding 直接引用；笔记仅作叙事对照
   specs:
-    - 使用中文编写（含 Requirement 标题与 Scenario）
-    - 规范性用词：必须 / 应当；场景用 ####，WHEN/THEN 可用「当 / 则」
+    - 使用中文编写
+    - 需求与场景对齐系统总体规划验收口径
   tasks:
-    - 使用中文编写任务说明
-    - 仅用 `- [ ] X.Y ...` 勾选格式
-    - 按依赖排序；验收放最后
-  docs:
-    - openspec 下所有叙述性文档（proposal、design、tasks、README、config 说明）必须用中文
-    - 写完或大改后，用 avoid-ai-writing skill（edit 模式）过一遍：去掉口号式加粗、口诀腔、空话，保持技术文档直白
-    - 与 documents/仿Opencode&Claude-code架构设计/（05/05a/05b/06）冲突时，以本 openspec 为准；改完规格后同步改上述架构笔记中的交叉引用
+    - 使用中文编写
+    - 先规格后代码；含可独立验证步骤

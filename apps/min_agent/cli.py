@@ -11,11 +11,11 @@ from agent_llm.client import LLMClient
 from min_agent.agent import assemble
 from min_agent.config import Settings
 
-PLACEHOLDERS = {"navigate", "talk_assistant", "ppt_generate"}
+PLACEHOLDERS = {"navigate", "ppt_generate"}
 
 
 def run_once(message: str, session_id: str | None = None) -> int:
-    """跑一轮对话；佣金场景若点了占位或未调 query 会打 WARNING（仍返回 0）。"""
+    """跑一轮对话；若点了占位或未调 query 会打 WARNING（仍返回 0）。"""
     settings = Settings.load()
     if not settings.openai_api_key:
         print("缺少 OPENAI_API_KEY，请配置 .env", file=sys.stderr)
@@ -63,7 +63,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--session-id", default=None)
     args = parser.parse_args(argv)
     if not args.message:
-        parser.error("请提供用户消息，例如：min-agent \"睿德志行佣金审核通过了吗？\"")
+        parser.error("请提供用户消息，例如：min-agent \"本部门有哪些人？\"")
     raise SystemExit(run_once(args.message, args.session_id))
 
 

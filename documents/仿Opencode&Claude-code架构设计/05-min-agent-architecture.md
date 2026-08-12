@@ -1,13 +1,13 @@
 # min-agent 架构速览
 
-> 目标：落地min-agent 统一助手（CRM 问答、话术、会议纪要、PPT 等）
-> 默认 Agent：`min_agent`（FC 前台）；话术/纪要/PPT 等固定流水线用独立 Workflow，经 tool / task 挂载（方案 A）
+> 目标：落地 min-agent 前台 FC 助手（ChatOps：自然语言操作 go-admin）
+> 默认 Agent：`min_agent`（FC 前台）；固定流水线若再需要，经 tool 挂载，不进主循环
 > 方法：对齐 OpenCode / Claude Code 的 Store / Loop / Turn，不搬编码专用能力
+> 产品真源：本仓库 `documents/系统总体规划.md`
 > 对照解读：[01](./01-opencode-architecture.md) · [03](./03-claude-code-architecture.md)
 > 模块细读：[05a](./05a-min-agent-loop-agent.md) · [05b](./05b-min-agent-state-dataflow.md)
 > 目录与阶段：[06](./06-min-agent-tree.md)
 > 实现规格（以它为准）：本仓库 `openspec/`（基线在 `openspec/specs/`；进行中在 `openspec/changes/`）
-> P0 已归档：`openspec/changes/archive/2026-07-15-p0-chat-fc-loop/`
 
 ---
 
@@ -145,26 +145,25 @@ sequenceDiagram
 
 ## 3.1 固定流水线挂载（方案 A）
 
-`min_agent` 是 FC 前台（开放问答、选工具）。话术、会议纪要、PPT 这类步骤固定的能力不塞进 Loop，做成独立 Workflow，再挂到前台：
+`min_agent` 是 FC 前台（开放问答、选工具）。会议纪要、PPT 等步骤固定的能力不塞进 Loop，做成独立 Workflow，再挂到前台（现行产品不含已下线的招商话术）：
 
 ```text
 用户 ↔ min_agent（FC + transcript（聊天记录））
-         ├─ query / navigate          轻工具（P0）
-         ├─ talk_assistant(...)       → HTTP → ai_crew（P1 已挂；不迁 SalesScriptFlow）
+         ├─ query / navigate          轻工具（P0/M1：go-admin 只读）
          ├─ meeting_minutes(...)      → 会议纪要 Workflow（后续）
-         └─ ppt_generate(...)         → PPT Workflow（后续）
+         └─ ppt_generate(...)         → PPT Workflow（后续，现为占位）
               或 P2：task(subagent=…)
 ```
 
 | 约定 | 说明 |
 |------|------|
 | 边界 | tool 入参 = 任务说明 + 材料；出参 = 摘要 + 产物链接/ID |
-| 内部 | 话术用独立 ai_crew HTTP；其它可用自研状态机；不要嵌进 `agent_core` |
+| 内部 | 可用自研状态机或独立 HTTP 服务；不要嵌进 `agent_core` |
 | 进度 | Workflow 进度经流式/SSE change 转给 UI（或异步完成后通知） |
 | 隔离 | 父 Session 默认看不到子流程完整中间态（见 05b 窄通道） |
 | 失败 | 外部服务不通 → 结构化错误回灌，进程不崩（全 tool） |
 
-P0：CRM `query`；P1：话术 HTTP 挂载；纪要 / PPT 按阶段加，不改 Loop 核心。
+P0/M1：ChatOps `query`（users / login_logs）；纪要 / PPT 按阶段加，不改 Loop 核心。
 
 ---
 
@@ -190,7 +189,6 @@ P0：仅 Agent 声明的工具白名单。业务数据范围仍由 Go 裁（身�
 | 短期记忆 | P0 | Store（PostgreSQL 跨请求）+ 本轮内存 `messages` |
 | 长期记忆 | P2 | 检索注入 system/user 前缀，勿与 compaction 混成一个模块 |
 | skill / @引用 | P2 | 按需进 context |
-| 话术挂载 | P1 | `talk_assistant` → HTTP ai_crew（§3.1） |
 | task / 纪要·PPT | P2 | 经 tool 或 `task` 挂载（§3.1）；默认同步、禁嵌套 |
 | MCP / 后台 / 联网 | P3 | 工具规模大了再考虑延迟加载 |
 
@@ -207,7 +205,7 @@ P0：仅 Agent 声明的工具白名单。业务数据范围仍由 Go 裁（身�
 | SessionPrompt / queryLoop | Loop |
 | SessionProcessor / 单轮执行 | Turn |
 | part 更新 + bus / SSE | P1 进度事件（边做边提示） |
-| task / Agent 工具 | P2 `task` + 话术/纪要/PPT 等 Workflow tool |
+| task / Agent 工具 | P2 `task` + 纪要/PPT 等 Workflow tool |
 
 细则见 [05a](./05a-min-agent-loop-agent.md)、[05b](./05b-min-agent-state-dataflow.md)。
 

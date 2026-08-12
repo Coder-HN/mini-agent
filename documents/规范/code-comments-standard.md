@@ -82,7 +82,7 @@
 - **魔法数字、批大小、超时、feature flag**：在常量定义处用 `#` 注释 **为何** 取该值（可与 Go 侧常量对齐时注明对应包/文件）。
 - **并发与 I/O**：线程锁顺序、LRU/连接池生命周期、与外部 API 限流假设等，在启动或封装处简短说明。
 
-参考现有风格：`ai/ai_crew/src/ai_crew/tools/search_tools.py`（模块 docstring、常量注释）、`ai/stock_reports/src/stock_reports/data/market_ready/common.py`。
+参考本仓现有风格：`apps/min_agent/tools/query.py`、`packages/agent_core/` 下模块 docstring 与公开函数注释。
 
 ### 4.4 TypeScript / JavaScript（含 React）
 

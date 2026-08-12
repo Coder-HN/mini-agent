@@ -37,6 +37,7 @@ class _EchoArgs(BaseModel):
 @dataclass
 class FakeStore:
     rows: list[dict[str, str]] = field(default_factory=list)
+    events: list[dict[str, Any]] = field(default_factory=list)
 
     def load_history(self, session_id: str) -> list[dict]:
         del session_id
@@ -49,13 +50,22 @@ class FakeStore:
     def append_message(
         self,
         session_id: str,
-        *,
-        role: str,
-        content: str,
+        role: str = "",
+        content: str = "",
         tool_call_id: str | None = None,
+        **kwargs: Any,
     ) -> None:
         del session_id, tool_call_id
+        role = kwargs.get("role", role)
+        content = kwargs.get("content", content)
         self.rows.append({"role": role, "content": content})
+
+    def append_tool_event(self, session_id: str, **kwargs: Any) -> str:
+        self.events.append({"session_id": session_id, **kwargs})
+        return "evt-1"
+
+    def list_tool_events(self, session_id: str) -> list[dict]:
+        return [e for e in self.events if e.get("session_id") == session_id]
 
 
 def _chat_response(content: str, tool_calls: list | None = None) -> Any:
@@ -266,15 +276,15 @@ class CompactionLoopTests(unittest.TestCase):
         self.assertEqual(self.store.rows[: len(history_snapshot)], history_snapshot)
 
     def test_short_chat_unchanged_path(self) -> None:
-        """短对话不触发摘要，只一次业务 chat（佣金桩路径形态）。"""
-        self.llm.chat.return_value = _chat_response("睿德志行已通过")
+        """短对话不触发摘要，只一次业务 chat（演示桩路径形态）。"""
+        self.llm.chat.return_value = _chat_response("示例门店甲已驳回")
         result = run_agent(
             store=self.store,
             llm=self.llm,
             tool_registry=self.tools,
             agent_registry=self.agents,
             session=self.session,
-            user_input="睿德志行佣金审核通过了吗？",
+            user_input="示例门店甲的审批通过了吗？",
             agent_name="t",
             compaction=CompactionConfig(
                 enabled=True,
@@ -282,9 +292,9 @@ class CompactionLoopTests(unittest.TestCase):
                 reserved_tokens=10000,
             ),
         )
-        self.assertEqual(result.reply, "睿德志行已通过")
+        self.assertEqual(result.reply, "示例门店甲已驳回")
         self.assertEqual(self.llm.chat.call_count, 1)
-        self.assertIn("睿德志行", self.store.rows[-1]["content"])
+        self.assertIn("示例门店甲", self.store.rows[-1]["content"])
 
 
 if __name__ == "__main__":

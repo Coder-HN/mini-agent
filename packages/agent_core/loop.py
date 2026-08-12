@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -96,7 +97,7 @@ def run_agent(
     """执行一轮用户请求的 FC Loop。
 
     结束条件：模型无 tool_calls（终答），或触达步数上限后的软收口总结。
-    中途 tool_result 只进内存 messages，不强制落库。
+    中途 tool_result 进内存 messages；同时写入 agent_tool_events 供审计查询。
     compaction 非空且配置有效时，每轮业务 llm.chat 前可压缩内存 messages。
     """
     agent = agent_registry.get(agent_name)
@@ -118,8 +119,35 @@ def run_agent(
         )
 
 
+def _usage_tokens(response: Any) -> dict[str, int | None]:
+    """从 LLM 响应读取 usage；缺失则全 None。"""
+    usage = getattr(response, "usage", None)
+    if usage is None:
+        return {
+            "prompt_tokens": None,
+            "completion_tokens": None,
+            "total_tokens": None,
+        }
+    return {
+        "prompt_tokens": getattr(usage, "prompt_tokens", None),
+        "completion_tokens": getattr(usage, "completion_tokens", None),
+        "total_tokens": getattr(usage, "total_tokens", None),
+    }
+
+
+def _permission_denied(result_text: str) -> bool:
+    try:
+        data = json.loads(result_text)
+    except json.JSONDecodeError:
+        return False
+    if not isinstance(data, dict):
+        return False
+    return data.get("error") in ("permission_denied", "missing_token")
+
+
 def _execute_tools(
     *,
+    store: Store,
     msg: Any,
     tool_registry: ToolRegistry,
     user_permissions: Any,
@@ -127,7 +155,9 @@ def _execute_tools(
     context: dict | None,
     tool_names_called: list[str],
     messages: list[dict[str, Any]],
+    usage: dict[str, int | None] | None = None,
 ) -> None:
+    usage = usage or {}
     for call in msg.tool_calls:
         name = call.function.name
         tool_names_called.append(name)
@@ -135,6 +165,7 @@ def _execute_tools(
             args = json.loads(call.function.arguments or "{}")
         except json.JSONDecodeError:
             args = {}
+        started = time.perf_counter()
         try:
             tool_ctx: dict[str, Any] = {"session_id": session_id}
             if context:
@@ -147,15 +178,33 @@ def _execute_tools(
             )
         except Exception as exc:
             result = json.dumps({"error": str(exc)}, ensure_ascii=False)
+        duration_ms = int((time.perf_counter() - started) * 1000)
+        result_text = (
+            result if isinstance(result, str) else json.dumps(result, ensure_ascii=False)
+        )
         messages.append(
             {
                 "role": "tool",
                 "tool_call_id": call.id,
-                "content": result
-                if isinstance(result, str)
-                else json.dumps(result, ensure_ascii=False),
+                "content": result_text,
             }
         )
+        try:
+            store.append_tool_event(
+                session_id,
+                tool_call_id=call.id,
+                tool_name=name,
+                arguments=args if isinstance(args, dict) else {},
+                result_summary=result_text,
+                permission_denied=_permission_denied(result_text),
+                duration_ms=duration_ms,
+                prompt_tokens=usage.get("prompt_tokens"),
+                completion_tokens=usage.get("completion_tokens"),
+                total_tokens=usage.get("total_tokens"),
+            )
+        except Exception:
+            # 审计失败不得打断 tool_result 回灌与后续编排
+            pass
 
 
 def _force_text_turn(
@@ -255,6 +304,7 @@ def _run_locked(
         )
         msg = response.choices[0].message
         messages.append(_assistant_dict(msg))
+        turn_usage = _usage_tokens(response)
 
         if not msg.tool_calls:
             reply = msg.content or ""
@@ -285,6 +335,7 @@ def _run_locked(
             )
 
         _execute_tools(
+            store=store,
             msg=msg,
             tool_registry=tool_registry,
             user_permissions=user_permissions,
@@ -292,6 +343,7 @@ def _run_locked(
             context=context,
             tool_names_called=tool_names_called,
             messages=messages,
+            usage=turn_usage,
         )
         step += 1
 

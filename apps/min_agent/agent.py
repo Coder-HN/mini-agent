@@ -1,6 +1,6 @@
-"""装配 min_agent：system prompt + query / navigate / talk_assistant / ppt。
+"""装配 min_agent：system prompt + query / write / navigate / ppt。
 
-查数据必须走 query；talk_assistant 经 HTTP 挂 ai_crew（方案 A）。
+查数据走 query；写账号走 write（先预览再确认）；写操作属总体规划 M2。
 """
 
 from __future__ import annotations
@@ -10,29 +10,31 @@ from agent_core.tools.registry import ToolRegistry
 from min_agent.tools.navigate import navigate_tool
 from min_agent.tools.ppt_generate import ppt_generate_tool
 from min_agent.tools.query import query_tool
-from min_agent.tools.talk_assistant import talk_assistant_tool
+from min_agent.tools.write import write_tool
 
-# 审批只读 + 工具分工写进 prompt，减少误点 navigate/话术/PPT
-SYSTEM_PROMPT = """你是 min-agent 前台助手，面向电商/销售 CRM 场景。
+SYSTEM_PROMPT = """你是 min-agent 前台助手，面向管理后台 ChatOps 场景。
 
-对审批与佣金：只读——可以查询与解释，不要声称已替用户审批或改状态。
+对用户与业务数据：可以查询与解释；写操作必须先预览再确认，不要声称已改数据除非 write 已成功执行。
 
 工具分工（必须遵守）：
-- query：查 CRM 业务数据（佣金审核、店铺等）。用户问「审过了吗」「佣金状态」时用它。
-- navigate：跳转到 CRM/业务网页。仅当用户要打开某个页面时用。
-- talk_assistant：分析微信聊天截图，生成对商家的推荐回复。用户要话术/分析截图时用；若请求上下文标明已附带截图，必须直接调用本工具（image_ref 可留空），不要向用户索要截图链接。若工具返回 ok=false，用中文说明真实原因（如话术服务不可用），不要编造「没收到截图」或编造话术。
+- query：查管理后台数据。问「本部门有哪些人 / 用户列表」用 data_type=users；问登录记录/登录失败用 data_type=login_logs。
+- write：创建用户（action=create_user）或停用用户（action=disable_user）。
+  第一步务必 confirmed=false，根据返回的 impact 用中文列出将影响对象并请用户确认；
+  仅当用户明确说确认/同意后再 confirmed=true 执行。禁止跳过预览直接写。
+- navigate：跳转到管理后台页面。仅当用户要打开某个页面时用。
 - ppt_generate：撰写/生成 PPT。仅做演示文稿时用。
 
-一次请求选最相关的工具；查数据不要点 navigate / talk_assistant / ppt_generate。
+一次请求选最相关的工具；查数据不要点 write / navigate / ppt_generate。
+若工具返回权限拒绝或缺少凭证，用中文如实说明，不要编造结果。
 回答用简洁中文。"""
 
-TOOL_NAMES = ["query", "navigate", "talk_assistant", "ppt_generate"]
+TOOL_NAMES = ["query", "write", "navigate", "ppt_generate"]
 
 
 def build_tool_registry() -> ToolRegistry:
     """注册本应用全部工具实例。"""
     registry = ToolRegistry()
-    for tool in (query_tool, navigate_tool, talk_assistant_tool, ppt_generate_tool):
+    for tool in (query_tool, write_tool, navigate_tool, ppt_generate_tool):
         registry.register(tool)
     return registry
 
@@ -45,7 +47,7 @@ def build_agent_registry() -> AgentRegistry:
             name="min_agent",
             system_prompt=SYSTEM_PROMPT,
             tool_names=list(TOOL_NAMES),
-            max_steps=20,  # 产品默认步数；触达后 OpenCode 式软收口
+            max_steps=20,
         )
     )
     return registry

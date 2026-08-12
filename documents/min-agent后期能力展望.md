@@ -1,7 +1,7 @@
 # min-agent 后期能力展望
 
 > 只记录**尚未立项**、但后续要关注的能力。  
-> 已开 change 见 [`openspec/README.md`](../openspec/README.md)；冲突以 `openspec/` 为准。
+> 已开 change 见 [`openspec/README.md`](../openspec/README.md)；冲突以 `openspec/` 与 `documents/系统总体规划.md` 为准。
 
 ---
 
@@ -12,13 +12,13 @@
 | 能力 | 含义 | 备注 |
 |------|------|------|
 | 压缩结果落库（OpenCode 式） | P3 首版只压本轮内存；后续把 prune 标记 / summarize checkpoint 写回 Store，加载时从 checkpoint + 近端拼上下文 | 在 `p3-context-compaction` 验证后再开；勿与长期记忆混模块 |
-| 用户中止（interrupt） | 取消请求时，中止信号传到 LLM 调用与正在执行的 tool；未完成 tool 补 interrupted 结果 | 长链路（话术轮询）无取消会占连接与费用；建议与 `p1-streaming-permission` 一并设计 |
+| 用户中止（interrupt） | 取消请求时，中止信号传到 LLM 调用与正在执行的 tool；未完成 tool 补 interrupted 结果 | 长工具链无取消会占连接与费用；建议与流式/权限 change 一并设计 |
 
 ---
 
 ## 可以考虑做
 
-改善体感，缺了不挡 FC Loop + 话术主路径；按产品优先级再排。
+改善体感，缺了不挡 FC Loop + ChatOps 主路径；按产品优先级再排。
 
 | 能力 | 含义 | 对照 |
 |------|------|------|

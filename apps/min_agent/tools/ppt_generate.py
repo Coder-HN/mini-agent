@@ -24,7 +24,7 @@ ppt_generate_tool = Tool(
     description=(
         "PPT 助手：按主题撰写或生成演示文稿。"
         "仅在用户明确要求做 PPT / 幻灯片时使用。"
-        "查询 CRM 数据请用 query。"
+        "查询管理后台数据请用 query。"
     ),
     args_schema=PptGenerateArgs,
     execute=_execute,

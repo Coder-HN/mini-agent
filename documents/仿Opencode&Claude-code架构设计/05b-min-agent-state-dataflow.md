@@ -9,7 +9,7 @@
 
 ## 1. 全局状态：Session transcript（会话聊天记录）
 
-一个用户会话的权威状态是消息历史，不是业务流水线大对象（对比话术 `SalesScriptState`）。
+一个用户会话的权威状态是消息历史，不是业务流水线大对象（固定步骤 Workflow 另有状态机，不进主 Loop）。
 
 | 存储 | 表/形态 | 阶段 |
 |------|---------|------|
@@ -39,7 +39,7 @@ L2  多 Agent           task 开子 Session；窄通道回传
 
 - 业务 Workflow（审批流、页面）→ L0 / 业务系统  
 - 对话编排 → L1  
-- CRM 调话术专家 → L2  
+- 前台调子 Agent / 固定流水线 tool → L2  
 
 「Python 不做业务编排」指 L0，不是说没有 L1/L2。  
 Agent 平台不做 BPM/DAG Workflow 引擎。
@@ -95,12 +95,12 @@ P1 边做边提示：进度事件走 bus/SSE，不是改 transcript 的替代品
 
 ---
 
-## 5. 和话术 Flow 的区别（避免混用）
+## 5. 和固定流水线 Workflow 的区别（避免混用）
 
-| | 话术 `SalesScriptFlow` | min_agent 前台 FC |
-|--|------------------------|-------------|
-| 下一步谁定 | `_STATE_TRANSITIONS` / 固定步骤 | 模型 `tool_calls` |
-| 状态 | 业务字段袋（ocr/structured/…） | transcript（聊天记录） |
-| 编排 | 自研状态机（可不用 CrewAI 图） | FC Loop |
+| | 固定步骤 Workflow（纪要/PPT 等） | min_agent 前台 FC |
+|--|----------------------------------|-------------------|
+| 下一步谁定 | 状态机 / 固定步骤 | 模型 `tool_calls` |
+| 状态 | 业务字段袋 | transcript（聊天记录） |
+| 编排 | 独立服务或自研状态机 | FC Loop |
 
-话术 / 纪要 / PPT 等固定链路仍用 Workflow；开放问答用本文这套。这些 Workflow 经 tool 挂到前台（[05 §3.1](./05-min-agent-architecture.md)）。
+纪要 / PPT 等固定链路仍用 Workflow；开放问答用本文这套。这些 Workflow 经 tool 挂到前台（[05 §3.1](./05-min-agent-architecture.md)）。现行产品不含已下线的招商话术流水线。

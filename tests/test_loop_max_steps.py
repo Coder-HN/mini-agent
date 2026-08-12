@@ -30,6 +30,7 @@ class _EchoArgs(BaseModel):
 @dataclass
 class FakeStore:
     rows: list[dict[str, str]] = field(default_factory=list)
+    events: list[dict[str, Any]] = field(default_factory=list)
 
     def load_history(self, session_id: str) -> list[dict]:
         del session_id
@@ -42,13 +43,23 @@ class FakeStore:
     def append_message(
         self,
         session_id: str,
-        *,
-        role: str,
-        content: str,
+        role: str = "",
+        content: str = "",
         tool_call_id: str | None = None,
+        **kwargs: Any,
     ) -> None:
         del session_id, tool_call_id
+        role = kwargs.get("role", role)
+        content = kwargs.get("content", content)
         self.rows.append({"role": role, "content": content})
+
+    def append_tool_event(self, session_id: str, **kwargs: Any) -> str:
+        event = {"session_id": session_id, **kwargs}
+        self.events.append(event)
+        return "evt-1"
+
+    def list_tool_events(self, session_id: str) -> list[dict]:
+        return [e for e in self.events if e.get("session_id") == session_id]
 
 
 def _tool_call(name: str = "echo", call_id: str = "call_1") -> Any:

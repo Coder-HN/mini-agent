@@ -17,10 +17,9 @@
 - `specs/session-store`
 - `specs/tools-registry`
 - `specs/min-agent-app`
-- `specs/talk-assistant-mount`
 - `specs/context-compaction`
 
-来自归档：`changes/archive/2026-07-15-p0-chat-fc-loop/`、`changes/archive/2026-07-16-p1-talk-assistant/`、`changes/archive/2026-07-17-p2-loop-max-steps-align/`、`changes/archive/2026-07-20-p3-context-compaction/`。
+归档变更中含已下线的招商话术挂载（`p1-talk-assistant`），仅作历史；现行产品不含 `talk_assistant`。
 
 ## 当前活动变更
 

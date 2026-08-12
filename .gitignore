@@ -6,8 +6,17 @@ __pycache__/
 dist/
 build/
 .env
+.env.*
+!.env.example
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+coverage/
+.idea/
+.vscode/
+node_modules/
 *.log
 .http-server.out
 .http-server.err
+.DS_Store
+Thumbs.db

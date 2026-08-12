@@ -1,7 +1,7 @@
 """向 min_agent Agent 发一条用户消息，打印回复（联调脚本，需 .env + Postgres）。
 
 用法（仓库根目录）:
-  python tests/chat.py 睿德志行佣金审核通过了吗？
+  python tests/chat.py 示例门店甲的审批通过了吗？
   python tests/chat.py --session-id <id> 刚才那两笔是哪个渠道？
 """
 

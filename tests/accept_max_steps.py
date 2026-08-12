@@ -47,7 +47,7 @@ def main() -> None:
         tool_registry=tools,
         agent_registry=agents,
         session=session,
-        user_input="睿德志行佣金审核通过了吗？请先查再答。",
+        user_input="示例门店甲的审批通过了吗？请先查再答。",
         agent_name="min_agent",
         compaction=settings.compaction_config(),
     )
